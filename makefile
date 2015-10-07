@@ -1,19 +1,19 @@
 FILES=\
-main.c \
-char.c \
-file.c \
-list.c \
-parse.c \
-tree.c \
-token.c \
-linear_interpreter.c \
-char.h \
-file.h \
-list.h \
-parse.h \
-tree.h \
-token.h \
-linear_interpreter.h \
+./src/main.c \
+./src/char.c \
+./src/file.c \
+./src/list.c \
+./src/parse.c \
+./src/tree.c \
+./src/token.c \
+./src/linear_interpreter.c \
+./src/char.h \
+./src/file.h \
+./src/list.h \
+./src/parse.h \
+./src/tree.h \
+./src/token.h \
+./src/linear_interpreter.h \
 
-all:
-    gcc -o rcs $(FILES)
+make:
+	gcc $(FILES) -o ./build/rcs
