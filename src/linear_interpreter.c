@@ -54,6 +54,7 @@ int li_resolve_list(struct List *list){
 		return list->tokens[0]->value;
 	}
 }
+
 // Li header
 int li_find_type(struct List *list, char type, int start){
 	int found = -1;
