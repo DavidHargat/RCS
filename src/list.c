@@ -10,12 +10,13 @@ struct List *list_create(){
 	list->tokens = malloc(sizeof(struct Token *));
 	list->tokens[0] = token_create('#',0);
 	list->length = 1;
+	list->type   = 0;
 	return list;
 }
 
 struct List *list_copy(struct List *list){
 	struct List *nlist = list_create();
-	int size = sizeof(struct Token)*list->length;
+	int size = sizeof(struct Token *)*list->length;
 	
 	nlist->length = list->length;
 	nlist->tokens = malloc(size);
@@ -25,17 +26,13 @@ struct List *list_copy(struct List *list){
 }
 
 struct List *list_sub(struct List *list, int start, int end){
-	struct List *nlist = list_copy(list);
-	int i;
+	int length = (end-start)+1,
+		size = length * sizeof(struct Token *);
+	struct List *nlist;
+	nlist->tokens = malloc(size);
+	memcpy(nlist->tokens,&list->tokens[start-1],size);
+	nlist->length = length;
 
-	for(i=0; i < ((list->length-1)-end); i++){
-		list_remove(nlist,nlist->length-1);
-	}
-	
-	for(i=0; i<start; i++){
-		list_remove(nlist,0);
-	}
-	
 	return nlist;
 }
 

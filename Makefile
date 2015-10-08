@@ -4,9 +4,8 @@ src/char.h \
 src/file.h \
 src/list.h \
 src/parse.h \
-src/tree.h \
 src/token.h \
-src/linear_interpreter.h
+src/inter.h
 
 OBJECTS=\
 build/main.o \
@@ -14,9 +13,8 @@ build/char.o \
 build/file.o \
 build/list.o \
 build/parse.o \
-build/tree.o \
 build/token.o \
-build/linear_interpreter.o
+build/inter.o
 
 .PHONY: all
 all: build/rcs

@@ -3,6 +3,7 @@
 
 struct List{
 	struct Token **tokens;
+	char type;
 	int length;
 };
 

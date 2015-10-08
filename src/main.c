@@ -5,25 +5,17 @@
 #include "file.h"
 #include "list.h"
 #include "parse.h"
-#include "tree.h"
 #include "char.h"
-#include "linear_interpreter.h"
+#include "inter.h"
 // TO DO1
 // * Build a tree
 
 
 void eval(char *str){
 	struct List *list = parse("1+2+3+4+5+6+7+8");
+
 	
-	printf("\n\n");
-	
-	list_print(list);
-	
-	li_statement(list);
-	//tree_check_expression(list);
-	//struct Node *tree = tree_create_expression(list,1);
-	//tree_print(tree,1);
-	//printf("\n");
+	list_print(list_sub(list,1,3));
 }
 
 //glib
