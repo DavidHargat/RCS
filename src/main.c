@@ -15,7 +15,7 @@
 
 void eval(char *str){
 	struct List *list = parse(str); // Parse string to tokens array
-	list_print(list); // Print token array
+	list_print(list);
 	inter_list_statement(list); // Interpret.
 }
 

@@ -38,6 +38,7 @@ int inter_find_next_type(struct List *list, char type, int start){
 	}
 	return -1;
 }
+
 int inter_find_next_match(struct List *list, char *types, int start){
 	int i;
 	for(i=start;i<list->length;i++){
@@ -46,6 +47,8 @@ int inter_find_next_match(struct List *list, char *types, int start){
 	}
 	return -1;
 }
+
+// Finds the next MATCHING 'end', from start index. 
 int inter_find_end(struct List *list, int start){
 	int then_index = start;
 
@@ -68,6 +71,8 @@ int inter_find_end(struct List *list, int start){
 
 	return -1;
 }
+
+// Finds the next MATCHING close parenthesis from start index.
 int inter_find_close_paren(struct List *list, int start){
 	int then_index = start;
 
@@ -91,6 +96,9 @@ int inter_find_close_paren(struct List *list, int start){
 	printf("(ERROR:inter_find_close_paren) Could not find matching ')' for '(' at %d.\n",start);
 	return -1;	
 }
+
+// Checks if an expression is valid
+// Returns boolean
 int inter_expression_check(struct List *list){
 	if(list->length == 0){
 		printf("(ERROR:inter_expression_check) Expression is empty.\n");
@@ -124,25 +132,10 @@ int inter_expression_check(struct List *list){
 		}
 	}
 }
-// END HELPER FUNCTIONS
-int inter_expression(struct List *list){
-	struct List *temp = list_copy(list);
-	list_print(temp);
 
-	if( list->length == 0){
-		return 0;
-	}
-
-	if( list->length == 1 ){
-		return list->tokens[0]->value;
-	}
-
-	if( inter_expression_check( temp ) == -1 ){
-		printf("(ERROR:inter_expression) Invalid expression. \n");
-		return 0;
-	}
-	
-
+// Reduces parenthesis of given expression
+// Mutation
+int inter_expression_reduce(struct List *temp){
 	int open_paren_index;
 	while( (open_paren_index = inter_find_next_type(temp,'(', 0)) != -1 ){
 		// Handle parenthesis recursively.
@@ -165,8 +158,11 @@ int inter_expression(struct List *list){
 			}
 		}
 	}
-	
+}
 
+// Reduces math operations of given expression
+// Mutation
+int inter_expression_resolve(struct List *temp){
 	int i;
 	for(i=0; i < temp->length; i++){
 		char type = temp->tokens[i]->type;
@@ -175,11 +171,35 @@ int inter_expression(struct List *list){
 			struct Token *result_token = token_create('#',result);
 			list_remove(temp,i-1);
 			list_remove(temp,i-1);
-			printf("resolved expression -> %d \n",result);
 			temp->tokens[i-1] = result_token;
 			i = -1;
 		}
 	}
+}
+
+// END HELPER FUNCTIONS
+
+// Resolves an expression to a value.
+// TODO: Should probably resolve to a token (to support multiple values.)
+int inter_expression(struct List *list){
+	struct List *temp = list_copy(list);
+
+	if( list->length == 0){
+		return 0;
+	}
+
+	if( list->length == 1 ){
+		return list->tokens[0]->value;
+	}
+
+	if( inter_expression_check( temp ) == -1 ){
+		printf("(ERROR:inter_expression) Invalid expression. \n");
+		return 0;
+	}
+
+	inter_expression_reduce( temp );
+
+	inter_expression_resolve( temp );
 
 	if( temp->length != 1 ){
 		printf("(ERROR:inter_expression) Expected expression length: 1, found: %d.\n",temp->length);
@@ -212,12 +232,8 @@ int inter_if_statement(struct List *list, int start){
 	struct List *exp = list_sub(list,if_index+1,then_index-1);
 	int condition_result = inter_expression(exp);
 
-	list_print(exp);
-
 	if(condition_result>=1){
 		struct List *statement = list_sub(list,then_index+1,end_index-1);
-		printf("true->\n");
-		list_print(statement);
 		return 1;
 	}else{
 		return 0;
@@ -244,7 +260,7 @@ int inter_print_statement(struct List *list, int start){
 	}
 
 	struct List *exp = list_sub(list,open_paren_index+1,close_paren_index-1);
-	list_print(exp);
+	
 	int result = inter_expression(exp);
 
 	printf("%d\n",result);

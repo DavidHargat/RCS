@@ -56,6 +56,9 @@ int parse_find_word_end(char *str, int start){
 	int i,l=strlen(str);
 	for(i=start; i<l; i++){
 		char c = str[i];
+		if( i == l-1 ){
+			return l;
+		}
 		if( !char_is_alphabetic(c) ){
 			return i;
 		}
@@ -94,7 +97,7 @@ char *parse_word(char *str, int i){
 		
 		memcpy( sub, &str[start], num_of_chars );
 		sub[num_of_chars] = '\0';
-		
+
 		return sub;
 	}else{
 		printf("(parse.c::parse_word) failed to parse word at %d \n",i);
