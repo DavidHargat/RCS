@@ -216,17 +216,17 @@ int inter_if_statement(struct List *list, int start){
 
 	if(then_index == -1){
 		printf("(ERROR:inter_if_statement) 'if' at %d missing matching 'then'.\n",if_index);
-		return 0;
+		return -1;
 	}
 
 	if(end_index == -1){
 		printf("(ERROR:inter_if_statement) 'if' at %d missing matching 'end'.\n",if_index);
-		return 0;
+		return -1;
 	}
 
 	if(end_index<then_index){
 		printf("(ERROR:inter_if_statement) 'if' at %d expected 'then' found 'end'.\n",if_index);
-		return 0;	
+		return -1;	
 	}
 
 	struct List *exp = list_sub(list,if_index+1,then_index-1);
@@ -234,10 +234,10 @@ int inter_if_statement(struct List *list, int start){
 
 	if(condition_result>=1){
 		struct List *statement = list_sub(list,then_index+1,end_index-1);
-		return 1;
-	}else{
-		return 0;
+		inter_list_statement(statement);
 	}
+
+	return end_index+1;
 }
 
 int inter_print_statement(struct List *list, int start){
@@ -264,6 +264,8 @@ int inter_print_statement(struct List *list, int start){
 	int result = inter_expression(exp);
 
 	printf("%d\n",result);
+
+	return close_paren_index+1;
 }
 
 int inter_list_statement_token(struct List *list, int index){
@@ -271,12 +273,14 @@ int inter_list_statement_token(struct List *list, int index){
 	char type = t->type;
 
 	if( type == 'i' ){
-		inter_if_statement(list, index);
+		return inter_if_statement(list, index);
 	}
 
 	if( type == 'p' ){
-		inter_print_statement(list, index);
+		return inter_print_statement(list, index);
 	}
+
+	return -1;
 }
 
 // Search a list for a statement
@@ -285,7 +289,12 @@ int inter_list_statement(struct List *list){
 	for(i=0; i<list->length; i++){
 		struct Token *t = list->tokens[i];
 		if( char_is_match(t->type,INTER_STATEMENTS) ){
-			inter_list_statement_token(list,i);
+			int skip_to = inter_list_statement_token(list,i);
+			if(skip_to != -1){
+				i = skip_to - 1;
+			}else{
+				// Did not evaluate
+			}
 		}
 	}
 }
