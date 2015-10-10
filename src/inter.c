@@ -142,25 +142,27 @@ int inter_expression(struct List *list){
 		return 0;
 	}
 	
-	int open_paren_index = inter_find_next_type(temp,'(', 0);
 
-	// Handle parenthesis recursively.
-	if( open_paren_index != -1 ){
-		int close_paren_index = inter_find_close_paren(temp,open_paren_index+1);
-		if( close_paren_index != -1){
-			int paren_size = (close_paren_index - open_paren_index);
-			// Create a new token list 'sub_expression' for whats between the parenthesis
-			struct List *sub_expression = list_sub(temp,open_paren_index+1,close_paren_index-1);
-			// Calculate the result of that expression
-			int result = inter_expression(sub_expression);
-			// Remove that chunk of tokens from our list
-			list_remove_sub(temp,open_paren_index+1,close_paren_index);
-			// Add a 'result token' where the expression was.
-			struct Token *result_token = token_create('#',result); // replace close paren with result
-			temp->tokens[open_paren_index] = result_token;
-		}else{
-			printf("(ERROR:inter_expression) found '(' without matching ')'.\n");
-			return 0;
+	int open_paren_index;
+	while( (open_paren_index = inter_find_next_type(temp,'(', 0)) != -1 ){
+		// Handle parenthesis recursively.
+		if( open_paren_index != -1 ){
+			int close_paren_index = inter_find_close_paren(temp,open_paren_index+1);
+			if( close_paren_index != -1){
+				int paren_size = (close_paren_index - open_paren_index);
+				// Create a new token list 'sub_expression' for whats between the parenthesis
+				struct List *sub_expression = list_sub(temp,open_paren_index+1,close_paren_index-1);
+				// Calculate the result of that expression
+				int result = inter_expression(sub_expression);
+				// Remove that chunk of tokens from our list
+				list_remove_sub(temp,open_paren_index+1,close_paren_index);
+				// Add a 'result token' where the expression was.
+				struct Token *result_token = token_create('#',result); // replace close paren with result
+				temp->tokens[open_paren_index] = result_token;
+			}else{
+				printf("(ERROR:inter_expression) found '(' without matching ')'.\n");
+				return 0;
+			}
 		}
 	}
 	
