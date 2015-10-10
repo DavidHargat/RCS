@@ -2,13 +2,15 @@
 #include <stdlib.h>
 
 #include "token.h"
+#include "parse.h"
 
 void token_print(struct Token *t){
 	if(t->type=='#'){
 		printf(" %d",t->value);
 	}else{
 		if(char_is_alphabetic(t->type)){
-			printf(" %s",parse_type_to_word(t->type));
+			char *s = parse_type_to_word(t->type);
+			printf(" %s",s);
 		}else{
 			printf(" %c",t->type);
 		}

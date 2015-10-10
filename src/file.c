@@ -21,7 +21,7 @@ char *file_read_string(char *filename){
 	// Get the size of the file (number of characters)
 	int file_size = 0;
 	fseek( f, 0L, SEEK_END ); // Set position in stream to the end.
-	file_size = ftell(f)+1;// -4 for some reason (I'm so sorry)
+	file_size = ftell(f)+1; // (I'm so sorry)
 	
 	// Reset our position in stream.
 	fseek(f, 0L, SEEK_SET);

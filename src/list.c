@@ -25,20 +25,32 @@ struct List *list_copy(struct List *list){
 	return nlist;
 }
 
+// rewrote using memcpy :)
 struct List *list_sub(struct List *list, int start, int end){
-	int length = (end-start)+1,
-		size = length * sizeof(struct Token *);
+
+	int length = (end-start)+1;
+	int	size = length * sizeof(struct Token *);
+
 	struct List *nlist;
+	nlist = list_create();
 	nlist->tokens = malloc(size);
-	memcpy(nlist->tokens,&list->tokens[start-1],size);
 	nlist->length = length;
+	memcpy(nlist->tokens,&list->tokens[start],size);
 
 	return nlist;
 }
 
+// INCLUSIVE
+void list_remove_sub(struct List *list, int start, int end){
+	int i;
+	for(i=0;i<(end-start)+1;i++){
+		list_remove(list,start);
+	}
+}
+
 void list_resize(struct List *list, int l){
 	list->length = l;
-	list->tokens = (struct Token **) realloc(list->tokens, sizeof(struct Token *)*l);
+	list->tokens = realloc(list->tokens, sizeof(struct Token *)*l);
 }
 
 void list_add(struct List *list, struct Token *t){
@@ -69,7 +81,6 @@ void list_remove(struct List *list, int index){
 }
 
 void list_print(struct List *list){
-	printf("list:\n");
 	int i;
 	for(i=0;i<list->length;i++){
 		token_print(list->tokens[i]);
