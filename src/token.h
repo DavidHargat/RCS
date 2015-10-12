@@ -1,9 +1,29 @@
 #ifndef TOKEN_H
 #define TOKEN_H
 
+/*
+* TYPES
+* Standard
+* 	'i' - if
+* 	't' - then
+* 	'e' - end
+* 	'#' - number
+* 	'p' - print
+* 	'(' - open parenthesis
+* 	')' - close parenthesis
+* Grammar
+* 	'l' - list
+* 	values
+* 		0 - expression
+* 		1 - function statement
+* 		2 - if statement
+*		3 - 
+*/
+
 struct Token{
 	char type;
 	int value;
+	struct List *list;
 };
 
 void token_print(struct Token *t);

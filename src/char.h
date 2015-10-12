@@ -7,6 +7,6 @@ int char_is_match(int c, char *str);
 int char_is_operator(int c);
 int char_is_numeric(int c);
 int char_is_alphabetic(int c);
-int char_is_parenthesis(int c);
+int char_is_symbol(int c);
 
 #endif

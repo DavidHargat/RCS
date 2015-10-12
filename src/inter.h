@@ -15,5 +15,6 @@ int inter_expression(struct List *list);
 int inter_if_statement(struct List *list, int start);
 int inter_list_statement_token(struct List *list, int index);
 int inter_list_statement(struct List *list);
+int inter_list_to_grammar(struct List *list);
 
 #endif

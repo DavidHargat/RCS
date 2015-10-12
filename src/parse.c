@@ -7,9 +7,9 @@
 #include "list.h"
 
 // Conversion from 'string' to 'type' probably wanna refactor this.
-#define PARSE_MAP_SIZE 5
-#define PARSE_MAP_WORDS {"print","if","then","end","is"}
-#define PARSE_MAP_TYPES {'p','i','t','e','z'}
+#define PARSE_MAP_SIZE 6
+#define PARSE_MAP_WORDS {"print","if","then","end","is","list"}
+#define PARSE_MAP_TYPES {'p','i','t','e','z','l'}
 
 // Probably some memory leaks over here.
 char parse_word_to_type(char *str){	
@@ -34,7 +34,7 @@ char *parse_type_to_word(char type){
 		if(type == types[i]) return words[i];
 	}
 	
-	return "no word for type "+type;	
+	return "no word for type";	
 }
 // Move to parser
 int parse_find_number_end(char *str, int start){
@@ -145,7 +145,7 @@ struct Token *parse_char(char *str, int i){
 		t->type = current;
 	}
 	
-	if( char_is_parenthesis(current) ){
+	if( char_is_symbol(current) ){
 		t->type = current;
 	}
 	

@@ -21,5 +21,6 @@ struct Token *token_create(char type, int value){
 	struct Token *t = malloc(sizeof(struct Token *));
 	t->type  = type;
 	t->value = value;
+	t->list  = NULL;
 	return t;
 }

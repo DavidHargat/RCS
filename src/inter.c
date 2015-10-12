@@ -268,6 +268,13 @@ int inter_print_statement(struct List *list, int start){
 	return close_paren_index+1;
 }
 
+int inter_assignment_statement(struct List *list, int start){
+	struct Token *left, *right;
+	left  = list->tokens[start-1];
+	right = list->tokens[start+1];
+
+}
+
 int inter_list_statement_token(struct List *list, int index){
 	struct Token *t = list->tokens[index];
 	char type = t->type;
@@ -280,7 +287,72 @@ int inter_list_statement_token(struct List *list, int index){
 		return inter_print_statement(list, index);
 	}
 
+	if( type == '=' ){
+		return inter_assignment_statement(list, index);
+	}
+
 	return -1;
+}
+
+int inter_word_find_end(struct List *list, int index){
+	char t = list->tokens[index]->type;	
+	
+	// if statement
+	if( t == 'i' ){
+		return inter_find_end(list,index+1);
+	}
+	// print statement
+	if( t == 'p' ){
+		return inter_find_close_paren(list,index+2);
+	}
+	// assignment statement
+	if( t == '=' ){
+		return index+1;
+	}
+
+	printf("(ERROR:inter_word_find_end) Could not find end of word at %d.\n",index);
+	return -1;
+}
+
+struct Token *inter_word(struct List *list, int index){
+	int start = index;
+
+	list_print(list);
+	printf("<-%d\n",index);
+	int end = inter_word_find_end(list, start);
+	if( end != -1 ){
+		struct Token *word;
+		word = token_create('l',0);
+		if( list->tokens[start]->type == '=' )
+			start--;
+		word->list = list_sub(list,start,end);
+		return word; 
+	}else{
+		printf("(ERROR:inter_word) Could not parse word. \n");
+		return token_create(' ',0);
+	}
+}
+
+int inter_list_to_grammar(struct List *list){
+	struct List *sentence;
+	sentence = list_create();
+	list_remove(sentence,0);
+
+	int i;
+	for(i=0; i<list->length; i++){
+		struct Token *t = list->tokens[i];
+		if( char_is_match(t->type,INTER_STATEMENTS) ){
+			struct Token *word = inter_word(list,i);
+			i += word->list->length-1; // Jump forward to the next 'unused' token
+			list_add(sentence,word);
+		}
+	}
+
+	//printf("sentence->length = %d \n",sentence->length);
+	list_print(sentence);
+	list_print(sentence->tokens[0]->list);
+	list_print(sentence->tokens[1]->list);
+
 }
 
 // Search a list for a statement
