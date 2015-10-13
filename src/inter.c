@@ -14,7 +14,7 @@
 
 // substitution will be implimented here.
 int inter_operation(struct Token *ta, struct Token *op, struct Token *tb){
-	char type = op->type;
+	int type = op->type;
 	int result;
 	
 	int a = ta->value;
@@ -32,7 +32,7 @@ int inter_operation(struct Token *ta, struct Token *op, struct Token *tb){
 	return result;
 }
 // Inclusive of start! (checks the first index.)
-int inter_find_next_type(struct List *list, char type, int start){
+int inter_find_next_type(struct List *list, int type, int start){
 	int i;
 	for(i=start;i<list->length;i++){
 		if( list->tokens[i]->type == type )
@@ -50,7 +50,7 @@ int inter_find_end(struct List *list, int start){
 	int i;
 	for(i=then_index; i<list->length; i++){
 		struct Token *t = list->tokens[i];
-		char type = t->type;
+		int type = t->type;
 		if( type==T_IF )
 			nested_ifs++;
 		if( type==T_END){
@@ -74,7 +74,7 @@ int inter_find_close_paren(struct List *list, int start){
 	int i;
 	for(i=then_index; i<list->length; i++){
 		struct Token *t = list->tokens[i];
-		char type = t->type;
+		int type = t->type;
 		if( type == T_OPEN_PAREN )
 			nested_parens++;
 		if( type == T_CLOSE_PAREN ){
@@ -107,7 +107,7 @@ int inter_expression_check(struct List *list){
 	int i;
 	for(i=0; i<list->length; i++){
 		struct Token *t = list->tokens[i];
-		if( char_is_operator(t->type) ){
+		if( token_is_operator(t->type) ){
 			if( i+1 < list->length ){
 				struct Token *left=list->tokens[i-1],*right=list->tokens[i+1];
 				if( left->type != T_NUMBER && left->type != T_CLOSE_PAREN ){
@@ -158,8 +158,8 @@ int inter_expression_reduce(struct List *temp){
 int inter_expression_resolve(struct List *temp){
 	int i;
 	for(i=0; i < temp->length; i++){
-		char type = temp->tokens[i]->type;
-		if( char_is_operator(type) ){
+		int type = temp->tokens[i]->type;
+		if( token_is_operator(type) ){
 			int result = inter_operation(temp->tokens[i-1],temp->tokens[i],temp->tokens[i+1]);
 			struct Token *result_token = token_create(T_NUMBER,result);
 			list_remove(temp,i-1);
@@ -293,7 +293,7 @@ struct Token *inter_word_assignment(struct List *list, int index){
 }
 
 struct Token *inter_word(struct List *list, int index){
-	char type = list->tokens[index]->type;
+	int type = list->tokens[index]->type;
 
 	if( type == T_IF )
 		return inter_word_if(list,index);
