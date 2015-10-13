@@ -1,6 +1,12 @@
 #ifndef LIST_H
 #define LIST_H
 
+#define LIST_EXPRESSION 0
+#define LIST_STATEMENT 1
+#define LIST_IF 2
+#define LIST_PRINT 3
+#define LIST_ASSIGNMENT 4
+
 struct List{
 	struct Token **tokens;
 	char type;

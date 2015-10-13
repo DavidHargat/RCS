@@ -16,7 +16,10 @@
 void eval(char *str){
 	struct List *list = parse(str); // Parse string to tokens array
 	//inter_list_statement(list); // Interpret.
-	inter_list_to_grammar(list);
+	struct List *tree = inter_list_to_statement(list);
+
+	printf("Tree: %d\n",tree->length);
+	list_print(tree);
 }
 
 int main(int argc, char *argv[]){	

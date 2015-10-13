@@ -11,6 +11,8 @@
 #define INTER_STATEMENTS "ip="
 
 // BEGIN HELPER FUNCTIONS
+
+// substitution will be implimented here.
 int inter_operation(struct Token *ta, struct Token *op, struct Token *tb){
 	char type = op->type;
 	int result;
@@ -209,152 +211,130 @@ int inter_expression(struct List *list){
 	return temp->tokens[0]->value;
 }
 
-int inter_if_statement(struct List *list, int start){
-	int if_index = start;
-	int then_index = inter_find_next_type(list,'t',if_index+1);
-	int end_index = inter_find_end(list,if_index+1);
+struct Token *inter_word_if(struct List *list, int index){
+	// if, expression, statement
+	struct Token *word = token_create('l', LIST_IF);
+	word->list = list_create();
 
-	if(then_index == -1){
-		printf("(ERROR:inter_if_statement) 'if' at %d missing matching 'then'.\n",if_index);
-		return -1;
+	// Find matching keywords: if, then, end
+	int if_index   = index;
+	int then_index = inter_find_next_type(list,'t',if_index);
+	int end_index  = inter_find_end(list,then_index);
+	word->end = end_index;
+
+	// Error checking
+	if(then_index==-1){
+		printf("(ERROR::inter_word_if) 'if' missing 'then' at %d\n",if_index);
+		return NULL;
+	} if(end_index==-1){
+		printf("(ERROR::inter_word_if) 'if' missing 'end' at %d\n",if_index);
+		return NULL;
+	} if(end_index<then_index){
+		printf("(ERROR::inter_word_if) found 'end' expected 'then' at %d\n",end_index);
+		return NULL;
 	}
 
-	if(end_index == -1){
-		printf("(ERROR:inter_if_statement) 'if' at %d missing matching 'end'.\n",if_index);
-		return -1;
-	}
 
-	if(end_index<then_index){
-		printf("(ERROR:inter_if_statement) 'if' at %d expected 'then' found 'end'.\n",if_index);
-		return -1;	
-	}
+	// Extract expression
+	struct Token *expression = token_create('l',LIST_EXPRESSION);
+	expression->list = list_sub(list,if_index+1,then_index-1);
 
-	struct List *exp = list_sub(list,if_index+1,then_index-1);
-	int condition_result = inter_expression(exp);
+	// Extract statement
+	struct Token *statement = token_create('l',LIST_STATEMENT);
+	statement->list = inter_list_to_statement(list_sub(list,then_index+1,end_index-1));
 
-	if(condition_result>=1){
-		struct List *statement = list_sub(list,then_index+1,end_index-1);
-		inter_list_statement(statement);
-	}
+	// Extract type
+	//struct Token *type = list->tokens[index];
+	
+	// Add segments to our 'word'
+	//list_add(word->list, type);
+	list_add(word->list, expression);
+	list_add(word->list, statement);
 
-	return end_index+1;
+	return word;
 }
 
-int inter_print_statement(struct List *list, int start){
-	int open_paren_index = inter_find_next_type(list,'(',start);
+struct Token *inter_word_print(struct List *list, int index){
+	// print, expression
+	struct Token *word = token_create('l', LIST_PRINT);
+	word->list = list_create();
+
+	struct Token *type, *expression;
+	expression = token_create('l', LIST_EXPRESSION);
+
+	int open_paren_index = index+1;
 	int close_paren_index = inter_find_close_paren(list,open_paren_index+1);
+	word->end = close_paren_index;
 
-	if(open_paren_index == -1){
-		printf("(ERROR:inter_print_statement) 'print' at '%d' missing '('.\n",start);
-		return -1;
+	if(list->tokens[open_paren_index]->type != '('){
+		printf("(ERROR::inter_word_print) 'print' missing '(' at %d\n",index);
+		return NULL;
+	} if(close_paren_index == -1){
+		printf("(ERROR::inter_word_print) 'print' missing ')' at %d\n",index);
+		return NULL;
 	}
 
-	if(close_paren_index == -1){
-		printf("(ERROR:inter_print_statement) 'print' at '%d' missing '0'.\n",start);
-		return -1;
-	}
+	expression->list = list_sub(list,open_paren_index+1,close_paren_index-1);
 
-	if(close_paren_index<open_paren_index){
-		printf("(ERROR:inter_print_statement) 'print' at '%d' found ')' expected '('.\n",start);
-		return -1;
-	}
+	//type = list->tokens[index];
+	//list_add(word->list, type);
+	list_add(word->list, expression);
 
-	struct List *exp = list_sub(list,open_paren_index+1,close_paren_index-1);
-	
-	int result = inter_expression(exp);
-
-	printf("%d\n",result);
-
-	return close_paren_index+1;
+	return word;
 }
 
-int inter_assignment_statement(struct List *list, int start){
-	struct Token *left, *right;
-	left  = list->tokens[start-1];
-	right = list->tokens[start+1];
+struct Token *inter_word_assignment(struct List *list, int index){
+	// =, identifier, expression
+	struct Token *word = token_create('l', LIST_ASSIGNMENT);
+	word->list = list_create();
 
-}
+	struct Token *type, *identifier, *expression;
+	type       = list->tokens[index];
+	identifier = list->tokens[index-1];
+	expression = list->tokens[index+1];
+	word->end = index+1;
 
-int inter_list_statement_token(struct List *list, int index){
-	struct Token *t = list->tokens[index];
-	char type = t->type;
+	list_add(word->list,type);
+	list_add(word->list,identifier);
+	list_add(word->list,expression);
 
-	if( type == 'i' ){
-		return inter_if_statement(list, index);
-	}
-
-	if( type == 'p' ){
-		return inter_print_statement(list, index);
-	}
-
-	if( type == '=' ){
-		return inter_assignment_statement(list, index);
-	}
-
-	return -1;
-}
-
-int inter_word_find_end(struct List *list, int index){
-	char t = list->tokens[index]->type;	
-	
-	// if statement
-	if( t == 'i' ){
-		return inter_find_end(list,index+1);
-	}
-	// print statement
-	if( t == 'p' ){
-		return inter_find_close_paren(list,index+2);
-	}
-	// assignment statement
-	if( t == '=' ){
-		return index+1;
-	}
-
-	printf("(ERROR:inter_word_find_end) Could not find end of word at %d.\n",index);
-	return -1;
+	return word;
 }
 
 struct Token *inter_word(struct List *list, int index){
-	int start = index;
+	char type = list->tokens[index]->type;
 
-	list_print(list);
-	printf("<-%d\n",index);
-	int end = inter_word_find_end(list, start);
-	if( end != -1 ){
-		struct Token *word;
-		word = token_create('l',0);
-		if( list->tokens[start]->type == '=' )
-			start--;
-		word->list = list_sub(list,start,end);
-		return word; 
-	}else{
-		printf("(ERROR:inter_word) Could not parse word. \n");
-		return token_create(' ',0);
-	}
+	if(type=='i')
+		return inter_word_if(list,index);
+
+	if(type=='p')
+		return inter_word_print(list,index);
+
+	if(type=='=')
+		return inter_word_assignment(list,index);
 }
 
-int inter_list_to_grammar(struct List *list){
-	struct List *sentence;
-	sentence = list_create();
-	list_remove(sentence,0);
+struct List *inter_list_to_statement(struct List *list){
+	
+	struct List *statement;
+	statement = list_create();
+
+	list_print(list);
 
 	int i;
 	for(i=0; i<list->length; i++){
 		struct Token *t = list->tokens[i];
 		if( char_is_match(t->type,INTER_STATEMENTS) ){
 			struct Token *word = inter_word(list,i);
-			i += word->list->length-1; // Jump forward to the next 'unused' token
-			list_add(sentence,word);
+			i = word->end; // Jump forward to the end of the 'word'
+			list_add(statement,word);
 		}
 	}
 
-	//printf("sentence->length = %d \n",sentence->length);
-	list_print(sentence);
-	list_print(sentence->tokens[0]->list);
-	list_print(sentence->tokens[1]->list);
-
+	return statement;
 }
 
+/*
 // Search a list for a statement
 int inter_list_statement(struct List *list){
 	int i;
@@ -369,6 +349,6 @@ int inter_list_statement(struct List *list){
 			}
 		}
 	}
-}
+}*/
 
 

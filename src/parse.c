@@ -41,12 +41,11 @@ int parse_find_number_end(char *str, int start){
 	int i,l=strlen(str);
 	for(i=start; i<l; i++){
 		char c = str[i];
-		if( !char_is_numeric(c) || i == l-1 ){
-			if( i == l-1 ){
-				return i+1;
-			}else{
-				return i;
-			}
+		if( !char_is_numeric(c)){
+			return i-1;	
+		}
+		if( i == l-1 ){
+			return i;
 		}
 	}
 	return -1;
@@ -56,20 +55,19 @@ int parse_find_word_end(char *str, int start){
 	int i,l=strlen(str);
 	for(i=start; i<l; i++){
 		char c = str[i];
-		if( i == l-1 ){
-			return l;
-		}
 		if( !char_is_alphabetic(c) ){
+			return i-1;
+		}
+		if( i == l-1 ){
 			return i;
 		}
 	}
-	printf("Ended on '%c'\n", str[i]);
 	return -1;
 }
 
 int parse_number(char *str, int i){
 	int start = i;
-	int end = parse_find_number_end(str,start);
+	int end = parse_find_number_end(str,start)+1;
 	if( end >= start ){
 		// converts to a string, then convert string to a number
 		int num_of_digits = end-start;
@@ -88,7 +86,7 @@ int parse_number(char *str, int i){
 
 char *parse_word(char *str, int i){
 	int start = i;
-	int end = parse_find_word_end(str,start);
+	int end = parse_find_word_end(str,start)+1;
 	if( end >= start ){
 		// converts to a string, then convert string to a number
 		int num_of_chars = end-start;
@@ -171,8 +169,6 @@ struct List *parse(char *str){
 			list_add(list,t);
 		}
 	}
-	
-	list_remove(list,0);
 	
 	return list;
 }

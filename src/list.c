@@ -11,6 +11,7 @@ struct List *list_create(){
 	list->tokens[0] = token_create('#',0);
 	list->length = 1;
 	list->type   = 0;
+	list_remove(list,0);
 	return list;
 }
 

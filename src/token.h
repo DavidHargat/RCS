@@ -18,11 +18,14 @@
 * 		1 - function statement
 * 		2 - if statement
 *		3 - 
+* Pointer
+*   '.' - pointer
 */
 
 struct Token{
 	char type;
 	int value;
+	int end;
 	struct List *list;
 };
 
