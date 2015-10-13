@@ -14,3 +14,4 @@ int char_is_numeric(int c){ return char_is_match(c, "0123456789"); }
 int char_is_alphabetic(int c){ return char_is_match(c, "abcdefghijklmnopqrstuvwxyz"); }
 int char_is_symbol(int c){ return char_is_match(c, "()="); }
 int char_is_statement(int c){ return char_is_match(c,"ip="); }
+

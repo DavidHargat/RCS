@@ -7,34 +7,52 @@
 #include "list.h"
 
 // Conversion from 'string' to 'type' probably wanna refactor this.
-#define PARSE_MAP_SIZE 6
-#define PARSE_MAP_WORDS {"print","if","then","end","is","list"}
-#define PARSE_MAP_TYPES {'p','i','t','e','z','l'}
+#define PARSE_MAP_SIZE 14
+//#define PARSE_MAP_WORDS {"print","if","then","end","is","list"}
+//#define PARSE_MAP_TYPES {'p','i','t','e','z','l'}
+
+#define PARSE_MAP_TYPES {0,1,2,3,4,5,6,7,8,9,10,11,12,13}
+
+char * const PARSE_MAP_WORDS[PARSE_MAP_SIZE] = 
+{"if",
+"then",
+"end",
+"number",
+"print",
+"(",
+")",
+"list",
+"pointer",
+"+",
+"-",
+"*",
+"/",
+"="};
 
 // Probably some memory leaks over here.
-char parse_word_to_type(char *str){	
-	char *words[PARSE_MAP_SIZE] = PARSE_MAP_WORDS;
+int parse_word_to_type(char *str){	
 	char types[PARSE_MAP_SIZE]  = PARSE_MAP_TYPES;
 	
 	int i;
 	for(i=0; i<PARSE_MAP_SIZE; i++){
-		if(strcmp(str,words[i]) == 0) return types[i];
+		if(strcmp(str,PARSE_MAP_WORDS[i]) == 0) return types[i];
 	}
 	
-	return 0;
+	return -1;
 }
 
 // Here too.
 char *parse_type_to_word(char type){
-	char *words[PARSE_MAP_SIZE] = PARSE_MAP_WORDS;
 	char types[PARSE_MAP_SIZE]  = PARSE_MAP_TYPES;
 	
 	int i;
 	for(i=0; i<PARSE_MAP_SIZE; i++){
-		if(type == types[i]) return words[i];
+		if(type == types[i]) return PARSE_MAP_WORDS[i];
 	}
 	
-	return "no word for type";	
+	char *msg = malloc(16);
+	sprintf(msg, "<%d>", type);
+	return msg;	
 }
 // Move to parser
 int parse_find_number_end(char *str, int start){
@@ -115,17 +133,18 @@ struct Token *parse_char(char *str, int i){
 	
 	struct Token *t;
 	
-	t = token_create(' ',0); // Blank token, gets thrown out by default. 
+	t = token_create(-1,0); // Blank token, gets thrown out by default. 
 	
 	if( i == 0 )
-		left = ' ';
+		left = -1;
 	if( i == strlen(str)-1 )
-		right = ' ';
+		right = -1;
 	
 	if( char_is_numeric(current) && !char_is_numeric(left) ){
 		int value = parse_number(str,i);
 		
-		t->type  = '#';
+		//t->type  = '#';
+		t->type = T_NUMBER;
 		t->value = value;
 	}
 	
@@ -134,20 +153,26 @@ struct Token *parse_char(char *str, int i){
 		
 		char type = parse_word_to_type(word);
 		
-		if( type != 0 ){
+		if( type != -1 ){
 			t->type = type;
+		}else{
+			//t->type = '.';
+			t->type = T_POINTER;
 		}
 	}
 	
 	if( char_is_operator(current) ){
-		t->type = current;
+		if( current == '+' ) t->type = T_ADD;
+		if( current == '-' ) t->type = T_SUBTRACT;
+		if( current == '*' ) t->type = T_MULTIPLY;
+		if( current == '/' ) t->type = T_DIVIDE;
 	}
 	
 	if( char_is_symbol(current) ){
-		t->type = current;
+		if( current == '(' ) t->type = T_OPEN_PAREN;
+		if( current == ')' ) t->type = T_CLOSE_PAREN;
+		if( current == '=' ) t->type = T_EQUALS;
 	}
-	
-	//printf("%c->%c\n",current,t->type);
 	
 	return t;
 }
@@ -163,7 +188,7 @@ struct List *parse(char *str){
 	for(i=0; i<length; i++){
 		struct Token *t = parse_char(str,i);
 		// If the token is 'blank' we can forget it.
-		if( t->type == ' ' ){
+		if( t->type == -1 ){
 			free(t);
 		}else{
 			list_add(list,t);
