@@ -15,7 +15,8 @@
 #define T_MULTIPLY 11
 #define T_DIVIDE 12
 #define T_EQUALS 13
-
+#define T_FUNCTION 14
+#define T_COMMA 15
 
 /*
 * TYPES

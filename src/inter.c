@@ -205,7 +205,6 @@ int inter_expression(struct List *list){
 struct Token *inter_word_if(struct List *list, int index){
 	// if, expression, statement
 	struct Token *word = token_create(T_LIST, LIST_IF);
-	word->list = list_create();
 
 	// Find matching keywords: if, then, end
 	int if_index   = index;
@@ -245,18 +244,60 @@ struct Token *inter_word_if(struct List *list, int index){
 	return word;
 }
 
+// construct function syntax
+struct Token *inter_statement_function(struct List *list, int index){
+	// Create a new 'statement' token
+	struct Token *statement = token_create(T_LIST,LIST_FUNCTION);
+	// Grab the header token so we can append it to the statement
+	struct Token *header = list->tokens[index];
+	// Find/check the parenthesis
+	int open_paren_index,close_paren_index;
+	open_paren_index  = index+1;
+	close_paren_index = inter_find_close_paren(list,open_paren_index+1);
+	// ERROR CHECKING
+	if ( list->tokens[open_paren_index]->type != T_OPEN_PAREN ){
+		printf("(ERROR:inter_statement_function) Expected '(' after function found '%s' %d!=%d \n",
+		parse_type_to_word(list->tokens[open_paren_index]->type),list->tokens[open_paren_index]->type,T_OPEN_PAREN);
+	}else if(close_paren_index == -1){
+		printf("(ERROR:inter_statement_function) Expected ')' after function.\n");
+	}
+	// Add the header+arguments to the 'statement'
+	list_add(statement->list, header);
+	// Extract the 'arguments' from between the parenthesis
+	int i, start = open_paren_index+1, end = close_paren_index-1, last = start;
+	for(i=start; i<=end; i++){
+		int t = list->tokens[i]->type;
+		if( i == end ){
+			struct Token *arg = token_create(T_LIST,LIST_EXPRESSION);
+			arg->list = list_sub(list,last,i);
+			list_add(statement->list, arg);
+			last = i+1;
+		}
+		if ( t == T_COMMA ){
+			struct Token *arg = token_create(T_LIST,LIST_EXPRESSION);
+			arg->list = list_sub(list,last,i-1);
+			list_add(statement->list, arg);
+			last = i+1;	
+		}
+	}
+	// Return our new statement function
+	return statement;
+}
+
 struct Token *inter_word_print(struct List *list, int index){
-	// print, expression
-	struct Token *word = token_create(T_LIST, LIST_PRINT);
-	word->list = list_create();
 
-	struct Token *type, *expression;
-	expression = token_create(T_LIST, LIST_EXPRESSION);
+	// word is our 'statement'
+	struct Token *print_statement = token_create(T_LIST, LIST_PRINT);
 
+	// print takes an expression as it's argument
+	struct Token *expression = token_create(T_LIST, LIST_EXPRESSION);
+
+	// locate open and close parenthesis
 	int open_paren_index = index+1;
 	int close_paren_index = inter_find_close_paren(list,open_paren_index+1);
-	word->end = close_paren_index;
+	print_statement->end = close_paren_index;
 
+	// ERROR CHECKING
 	if(list->tokens[open_paren_index]->type != T_OPEN_PAREN){
 		printf("(ERROR::inter_word_print) 'print' missing '(' at %d\n",index);
 		return NULL;
@@ -265,19 +306,18 @@ struct Token *inter_word_print(struct List *list, int index){
 		return NULL;
 	}
 
+	// Extract the expression
 	expression->list = list_sub(list,open_paren_index+1,close_paren_index-1);
 
-	//type = list->tokens[index];
-	//list_add(word->list, type);
-	list_add(word->list, expression);
+	// header
+	list_add(print_statement->list, expression); // append it to our statement
 
-	return word;
+	return print_statement; 
 }
 
 struct Token *inter_word_assignment(struct List *list, int index){
 	// =, identifier, expression
 	struct Token *word = token_create(T_LIST, LIST_ASSIGNMENT);
-	word->list = list_create();
 
 	struct Token *type, *identifier, *expression;
 	type       = list->tokens[index];
@@ -299,7 +339,7 @@ struct Token *inter_word(struct List *list, int index){
 		return inter_word_if(list,index);
 	
 	if( type == T_PRINT )
-		return inter_word_print(list,index);
+		return inter_statement_function(list,index);
 
 	if( type == T_EQUALS )
 		return inter_word_assignment(list,index);

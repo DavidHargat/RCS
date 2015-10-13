@@ -88,3 +88,11 @@ void list_print(struct List *list){
 	}
 	printf("\n");
 }
+
+void list_print_tree(struct List *list){
+	int i;
+	for(i=0;i<list->length;i++){
+		token_print_tree(list->tokens[i],0);
+	}
+	printf("\n");
+}

@@ -6,6 +6,7 @@
 #define LIST_IF 2
 #define LIST_PRINT 3
 #define LIST_ASSIGNMENT 4
+#define LIST_FUNCTION 5
 
 struct List{
 	struct Token **tokens;

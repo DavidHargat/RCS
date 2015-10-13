@@ -15,12 +15,11 @@
 
 void eval(char *str){
 	struct List *list = parse(str); // Parse string to tokens array
-	list_print(list);
 
 	struct List *tree = inter_list_to_statement(list); // recursively parse tokens to a list of statement (tree)
 
 	printf("Tree: %d\n",tree->length);
-	list_print(tree);
+	list_print_tree(tree);
 }
 
 int main(int argc, char *argv[]){	

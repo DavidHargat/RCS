@@ -7,11 +7,8 @@
 #include "list.h"
 
 // Conversion from 'string' to 'type' probably wanna refactor this.
-#define PARSE_MAP_SIZE 14
-//#define PARSE_MAP_WORDS {"print","if","then","end","is","list"}
-//#define PARSE_MAP_TYPES {'p','i','t','e','z','l'}
-
-#define PARSE_MAP_TYPES {0,1,2,3,4,5,6,7,8,9,10,11,12,13}
+#define PARSE_MAP_SIZE 16
+#define PARSE_MAP_TYPES {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}
 
 char * const PARSE_MAP_WORDS[PARSE_MAP_SIZE] = 
 {"if",
@@ -27,15 +24,16 @@ char * const PARSE_MAP_WORDS[PARSE_MAP_SIZE] =
 "-",
 "*",
 "/",
-"="};
+"=",
+"function",
+","};
 
 // Probably some memory leaks over here.
 int parse_word_to_type(char *str){	
-	char types[PARSE_MAP_SIZE]  = PARSE_MAP_TYPES;
 	
 	int i;
 	for(i=0; i<PARSE_MAP_SIZE; i++){
-		if(strcmp(str,PARSE_MAP_WORDS[i]) == 0) return types[i];
+		if(strcmp(str,PARSE_MAP_WORDS[i]) == 0) return i;
 	}
 	
 	return -1;
@@ -43,11 +41,10 @@ int parse_word_to_type(char *str){
 
 // Here too.
 char *parse_type_to_word(char type){
-	char types[PARSE_MAP_SIZE]  = PARSE_MAP_TYPES;
 	
 	int i;
 	for(i=0; i<PARSE_MAP_SIZE; i++){
-		if(type == types[i]) return PARSE_MAP_WORDS[i];
+		if(type == i) return PARSE_MAP_WORDS[i];
 	}
 	
 	char *msg = malloc(16);
@@ -172,6 +169,7 @@ struct Token *parse_char(char *str, int i){
 		if( current == '(' ) t->type = T_OPEN_PAREN;
 		if( current == ')' ) t->type = T_CLOSE_PAREN;
 		if( current == '=' ) t->type = T_EQUALS;
+		if( current == ',' ) t->type = T_COMMA;
 	}
 	
 	return t;
