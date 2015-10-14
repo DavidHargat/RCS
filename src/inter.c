@@ -7,9 +7,13 @@
 #include "parse.h"
 #include "char.h"
 #include "inter.h"
+#include "functions.h"
 
 #define INTER_STATEMENTS {T_IF,T_PRINT,T_EQUALS}
 #define INTER_STATEMENTS_LENGTH 3
+
+const int STATEMENTS[INTER_STATEMENTS_LENGTH] = INTER_STATEMENTS;
+
 // BEGIN HELPER FUNCTIONS
 
 // substitution will be implimented here.
@@ -166,6 +170,15 @@ int inter_expression_resolve(struct List *temp){
 			list_remove(temp,i-1);
 			temp->tokens[i-1] = result_token;
 			i = -1;
+		}else if( type == T_FUNCTION ){
+			struct Token *result_token = function_execute(temp->tokens[i]);
+			list_remove(temp,i);
+			temp->tokens[i] = result_token;
+			i = -1;
+		}else if( type == T_NUMBER ){
+			// skip
+		}else{
+			printf("(ERROR:inter_expression_resolve) Invalid Expression '%s'. \n",parse_type_to_word(type));
 		}
 	}
 }
@@ -204,7 +217,7 @@ int inter_expression(struct List *list){
 
 struct Token *inter_statement_if(struct List *list, int index){
 	// if, expression, statement
-	struct Token *word = token_create(T_LIST, LIST_IF);
+	struct Token *word = token_create(T_LIST, LIST_FUNCTION);
 
 	// Find matching keywords: if, then, end
 	int if_index   = index;
@@ -226,8 +239,9 @@ struct Token *inter_statement_if(struct List *list, int index){
 
 
 	// Extract expression
-	struct Token *expression = token_create(T_LIST,LIST_EXPRESSION);
+	struct Token *expression = token_create(T_LIST,LIST_FUNCTION);
 	expression->list = list_sub(list,if_index+1,then_index-1);
+	list_insert(expression->list, token_create(T_EXPRESSION,0),0); // Add the header
 
 	// Extract statement
 	struct Token *statement = token_create(T_LIST,LIST_STATEMENT);
@@ -267,17 +281,26 @@ struct Token *inter_statement_function(struct List *list, int index){
 	int i, start = open_paren_index+1, end = close_paren_index-1, last = start;
 	for(i=start; i<=end; i++){
 		int t = list->tokens[i]->type;
-		if( i == end ){
-			struct Token *arg = token_create(T_LIST,LIST_EXPRESSION);
-			arg->list = list_sub(list,last,i);
-			list_add(statement->list, arg);
-			last = i+1;
-		}
-		if ( t == T_COMMA ){
-			struct Token *arg = token_create(T_LIST,LIST_EXPRESSION);
-			arg->list = list_sub(list,last,i-1);
-			list_add(statement->list, arg);
+		if( i == end || t == T_COMMA){
+			struct Token *arg = token_create(T_LIST,LIST_FUNCTION);
+			
+			if( i == end ){
+				arg->list = list_sub(list,last,i);
+			}else{
+				arg->list = list_sub(list,last,i-1);
+			}
+
+			// If it doesn't look like any statement, assume it's an expression.
+			if( !token_is_match(arg->list->tokens[0]->type,STATEMENTS,INTER_STATEMENTS_LENGTH) ){
+				list_insert(arg->list, token_create(T_EXPRESSION,LIST_FUNCTION),0); // expression header
+				list_add(statement->list, arg);
+			}else{
+				list_add(statement->list, inter_statement_function(arg->list,0) );
+			}
+
+
 			last = i+1;	
+			
 		}
 	}
 	statement->end = close_paren_index;
@@ -294,10 +317,11 @@ struct Token *inter_statement(struct List *list, int index){
 	if( type == T_PRINT )
 		return inter_statement_function(list,index);
 
+	printf("(ERROR:inter_statement) Invalid statement header '%s' \n",parse_type_to_word(type));
+
 }
 
 struct List *inter_list_to_statement(struct List *list){
-	int STATEMENTS[INTER_STATEMENTS_LENGTH] = INTER_STATEMENTS;
 
 	struct List *statements;
 	statements = list_create();

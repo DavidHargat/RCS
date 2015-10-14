@@ -26,8 +26,8 @@ void eval(char *str){
 	printf("Tree: %d\n",tree->length);
 	list_print_tree(tree);
 
-	//printf("Running...\n");
-	//function_execute_list(tree);
+	printf("Running...\n");
+	function_execute_list(tree);
 }
 
 int main(int argc, char *argv[]){	

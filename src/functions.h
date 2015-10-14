@@ -5,9 +5,10 @@
 #include "list.h"
 
 // takes n arguments
-int function_print(struct Token *statement);
-int function_if(struct Token *statement);
-int function_execute(struct Token *statement);
+struct Token *function_print(struct Token *statement);
+struct Token *function_if(struct Token *statement);
+struct Token *function_execute(struct Token *statement);
+struct Token *function_expression(struct Token *statement);
 void function_execute_list(struct List *statements);
 
 #endif

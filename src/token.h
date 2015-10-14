@@ -19,9 +19,10 @@
 #define T_COMMA 15
 #define T_STRING 16
 #define T_QUOTE 17
+#define T_EXPRESSION 18
 
-#define TOKEN_MAP_SIZE 18
-#define TOKEN_MAP_TYPES {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17}
+#define TOKEN_MAP_SIZE 19
+#define TOKEN_MAP_TYPES {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18}
 
 static char * const TOKEN_MAP_WORDS[TOKEN_MAP_SIZE] = 
 {
@@ -42,29 +43,9 @@ static char * const TOKEN_MAP_WORDS[TOKEN_MAP_SIZE] =
 	"function",
 	",",
 	"string",
-	"\""
+	"\"",
+	"expression"
 };
-
-/*
-* TYPES
-* Standard
-* 	'i' - if
-* 	't' - then
-* 	'e' - end
-* 	'#' - number
-* 	'p' - print
-* 	'(' - open parenthesis
-* 	')' - close parenthesis
-* Grammar
-* 	'l' - list
-* 	values
-* 		0 - expression
-* 		1 - function statement
-* 		2 - if statement
-*		3 - 
-* Pointer
-*   '.' - pointer
-*/
 
 struct Token{
 	int type;
