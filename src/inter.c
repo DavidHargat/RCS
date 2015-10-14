@@ -20,13 +20,13 @@ int inter_operation(struct Token *ta, struct Token *op, struct Token *tb){
 	int a = ta->value;
 	int b = tb->value;
 	
-	if(type == '+')
+	if(type == T_ADD)
 		result = a + b;
-	if(type == '*')
+	if(type == T_MULTIPLY)
 		result = a * b;
-	if(type == '-')
+	if(type == T_SUBTRACT)
 		result = a - b;
-	if(type == '/')
+	if(type == T_DIVIDE)
 		result = a / b;
 	
 	return result;
@@ -202,7 +202,7 @@ int inter_expression(struct List *list){
 	return temp->tokens[0]->value;
 }
 
-struct Token *inter_word_if(struct List *list, int index){
+struct Token *inter_statement_if(struct List *list, int index){
 	// if, expression, statement
 	struct Token *word = token_create(T_LIST, LIST_IF);
 
@@ -234,10 +234,10 @@ struct Token *inter_word_if(struct List *list, int index){
 	statement->list = inter_list_to_statement(list_sub(list,then_index+1,end_index-1));
 
 	// Extract type
-	//struct Token *type = list->tokens[index];
+	struct Token *header = list->tokens[index];
 	
 	// Add segments to our 'word'
-	//list_add(word->list, type);
+	list_add(word->list, header);
 	list_add(word->list, expression);
 	list_add(word->list, statement);
 
@@ -280,107 +280,39 @@ struct Token *inter_statement_function(struct List *list, int index){
 			last = i+1;	
 		}
 	}
+	statement->end = close_paren_index;
 	// Return our new statement function
 	return statement;
 }
 
-struct Token *inter_word_print(struct List *list, int index){
-
-	// word is our 'statement'
-	struct Token *print_statement = token_create(T_LIST, LIST_PRINT);
-
-	// print takes an expression as it's argument
-	struct Token *expression = token_create(T_LIST, LIST_EXPRESSION);
-
-	// locate open and close parenthesis
-	int open_paren_index = index+1;
-	int close_paren_index = inter_find_close_paren(list,open_paren_index+1);
-	print_statement->end = close_paren_index;
-
-	// ERROR CHECKING
-	if(list->tokens[open_paren_index]->type != T_OPEN_PAREN){
-		printf("(ERROR::inter_word_print) 'print' missing '(' at %d\n",index);
-		return NULL;
-	} if(close_paren_index == -1){
-		printf("(ERROR::inter_word_print) 'print' missing ')' at %d\n",index);
-		return NULL;
-	}
-
-	// Extract the expression
-	expression->list = list_sub(list,open_paren_index+1,close_paren_index-1);
-
-	// header
-	list_add(print_statement->list, expression); // append it to our statement
-
-	return print_statement; 
-}
-
-struct Token *inter_word_assignment(struct List *list, int index){
-	// =, identifier, expression
-	struct Token *word = token_create(T_LIST, LIST_ASSIGNMENT);
-
-	struct Token *type, *identifier, *expression;
-	type       = list->tokens[index];
-	identifier = list->tokens[index-1];
-	expression = list->tokens[index+1];
-	word->end = index+1;
-
-	list_add(word->list,type);
-	list_add(word->list,identifier);
-	list_add(word->list,expression);
-
-	return word;
-}
-
-struct Token *inter_word(struct List *list, int index){
+struct Token *inter_statement(struct List *list, int index){
 	int type = list->tokens[index]->type;
 
 	if( type == T_IF )
-		return inter_word_if(list,index);
+		return inter_statement_if(list,index);
 	
 	if( type == T_PRINT )
 		return inter_statement_function(list,index);
 
-	if( type == T_EQUALS )
-		return inter_word_assignment(list,index);
 }
 
 struct List *inter_list_to_statement(struct List *list){
 	int STATEMENTS[INTER_STATEMENTS_LENGTH] = INTER_STATEMENTS;
 
-	struct List *statement;
-	statement = list_create();
+	struct List *statements;
+	statements = list_create();
 
-	list_print(list);
+	//list_print(list);
 
 	int i;
 	for(i=0; i<list->length; i++){
 		struct Token *t = list->tokens[i];
 		if( token_is_match(t->type,STATEMENTS,INTER_STATEMENTS_LENGTH) ){
-			struct Token *word = inter_word(list,i);
-			i = word->end; // Jump forward to the end of the 'word'
-			list_add(statement,word);
+			struct Token *statement = inter_statement(list,i);
+			i = statement->end; // Jump forward to the end of the 'word'
+			list_add(statements,statement);
 		}
 	}
 
-	return statement;
+	return statements;
 }
-
-/*
-// Search a list for a statement
-int inter_list_statement(struct List *list){
-	int i;
-	for(i=0; i<list->length; i++){
-		struct Token *t = list->tokens[i];
-		if( char_is_match(t->type,INTER_STATEMENTS) ){
-			int skip_to = inter_list_statement_token(list,i);
-			if(skip_to != -1){
-				i = skip_to - 1;
-			}else{
-				// Did not evaluate
-			}
-		}
-	}
-}*/
-
-

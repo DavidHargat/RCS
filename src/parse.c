@@ -7,33 +7,15 @@
 #include "list.h"
 
 // Conversion from 'string' to 'type' probably wanna refactor this.
-#define PARSE_MAP_SIZE 16
-#define PARSE_MAP_TYPES {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}
 
-char * const PARSE_MAP_WORDS[PARSE_MAP_SIZE] = 
-{"if",
-"then",
-"end",
-"number",
-"print",
-"(",
-")",
-"list",
-"pointer",
-"+",
-"-",
-"*",
-"/",
-"=",
-"function",
-","};
+int PARSE_POINTER = 0;
 
 // Probably some memory leaks over here.
 int parse_word_to_type(char *str){	
 	
 	int i;
-	for(i=0; i<PARSE_MAP_SIZE; i++){
-		if(strcmp(str,PARSE_MAP_WORDS[i]) == 0) return i;
+	for(i=0; i<TOKEN_MAP_SIZE; i++){
+		if(strcmp(str,TOKEN_MAP_WORDS[i]) == 0) return i;
 	}
 	
 	return -1;
@@ -43,8 +25,8 @@ int parse_word_to_type(char *str){
 char *parse_type_to_word(char type){
 	
 	int i;
-	for(i=0; i<PARSE_MAP_SIZE; i++){
-		if(type == i) return PARSE_MAP_WORDS[i];
+	for(i=0; i<TOKEN_MAP_SIZE; i++){
+		if(type == i) return TOKEN_MAP_WORDS[i];
 	}
 	
 	char *msg = malloc(16);
@@ -74,6 +56,17 @@ int parse_find_word_end(char *str, int start){
 			return i-1;
 		}
 		if( i == l-1 ){
+			return i;
+		}
+	}
+	return -1;
+}
+
+int parse_find_string_end(char *str, int start){
+	int i=0, l=strlen(str);
+	for(i=start; i<l; i++){
+		char c = str[i];
+		if( c == '"' ){
 			return i;
 		}
 	}
@@ -118,6 +111,26 @@ char *parse_word(char *str, int i){
 	}
 }
 
+char *parse_string(char *str, int i){
+	int start = i+1;
+	int end = parse_find_string_end(str,start+1);
+
+	PARSE_POINTER = end;
+	if( end >= start ){
+		// converts to a string, then convert string to a number
+		int num_of_chars = end-start;
+		
+		char *sub = malloc(sizeof(char)*(num_of_chars+1));
+		
+		memcpy( sub, &str[start], num_of_chars );
+		sub[num_of_chars] = '\0';
+
+		return sub;
+	}else{
+		printf("(parse.c::parse_word) failed to parse word at %d \n",i);
+		return "ERROR";
+	}
+}
 
 // parse_char returns: checks chars and returns a token if one is found, else return ?void?
 struct Token *parse_char(char *str, int i){
@@ -128,15 +141,16 @@ struct Token *parse_char(char *str, int i){
 	* assume whitespace to avoid undefined behaviour.
 	*/
 	
+	if( i == 0 )
+		left = ' ';
+
+	if( i == (strlen(str)-1) ) 
+		right = ' ';
+
 	struct Token *t;
 	
 	t = token_create(-1,0); // Blank token, gets thrown out by default. 
-	
-	if( i == 0 )
-		left = -1;
-	if( i == strlen(str)-1 )
-		right = -1;
-	
+
 	if( char_is_numeric(current) && !char_is_numeric(left) ){
 		int value = parse_number(str,i);
 		
@@ -145,17 +159,23 @@ struct Token *parse_char(char *str, int i){
 		t->value = value;
 	}
 	
-	if( char_is_alphabetic(current) && !char_is_alphabetic(left) ){
+	if( char_is_alphabetic(current) && !char_is_alphabetic(left) && !(left=='"') ){
 		char *word = parse_word(str,i);
 		
 		char type = parse_word_to_type(word);
-		
+
 		if( type != -1 ){
 			t->type = type;
 		}else{
 			//t->type = '.';
 			t->type = T_POINTER;
 		}
+	}
+
+	if( current == '"' && char_is_alphabetic(right) && !char_is_alphabetic(left) ){
+		char *strx = parse_string(str,i);
+		t->type   = T_STRING;
+		t->string = strx;
 	}
 	
 	if( char_is_operator(current) ){
@@ -182,9 +202,9 @@ struct List *parse(char *str){
 	list = list_create();
 	
 	int length = strlen(str);
-	int i;
-	for(i=0; i<length; i++){
-		struct Token *t = parse_char(str,i);
+	//int i;
+	for(PARSE_POINTER=0; PARSE_POINTER<length; PARSE_POINTER++){
+		struct Token *t = parse_char(str,PARSE_POINTER);
 		// If the token is 'blank' we can forget it.
 		if( t->type == -1 ){
 			free(t);

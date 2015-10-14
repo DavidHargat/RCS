@@ -25,6 +25,8 @@ void token_print(struct Token *t){
 			printf("func");
 		printf("[]->\n");
 		list_print(t->list);
+	}else if (t->type == T_STRING){
+		printf(" s'%s' ",t->string);
 	}else{
 		char *s = parse_type_to_word(t->type);
 		printf(" %s ",s);

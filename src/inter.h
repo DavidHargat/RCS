@@ -16,8 +16,8 @@ int inter_list_statement_token(struct List *list, int index);
 int inter_list_statement(struct List *list);
 struct List *inter_list_to_statement(struct List *list);
 
-struct Token *inter_word_if(struct List *list, int index);
-struct Token *inter_word_print(struct List *list, int index);
-struct Token *inter_word_assignment(struct List *list, int index);
+struct Token *inter_statement_if(struct List *list, int index);
+struct Token *inter_statement_function(struct List *list, int index);
+struct Token *inter_statement_assignment(struct List *list, int index);
 
 #endif

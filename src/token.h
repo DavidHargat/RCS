@@ -17,6 +17,33 @@
 #define T_EQUALS 13
 #define T_FUNCTION 14
 #define T_COMMA 15
+#define T_STRING 16
+#define T_QUOTE 17
+
+#define TOKEN_MAP_SIZE 18
+#define TOKEN_MAP_TYPES {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17}
+
+static char * const TOKEN_MAP_WORDS[TOKEN_MAP_SIZE] = 
+{
+	"if",
+	"then",
+	"end",
+	"number",
+	"print",
+	"(",
+	")",
+	"list",
+	"pointer",
+	"+",
+	"-",
+	"*",
+	"/",
+	"=",
+	"function",
+	",",
+	"string",
+	"\""
+};
 
 /*
 * TYPES
@@ -44,6 +71,7 @@ struct Token{
 	int value;
 	int end;
 	struct List *list;
+	char *string;
 };
 
 void token_print(struct Token *t);
@@ -52,6 +80,5 @@ int token_is_numeric(int type);
 int token_is_alphabetic(int type);
 int token_is_symbol(int type);
 int token_is_statement(int type);
-
 
 #endif
