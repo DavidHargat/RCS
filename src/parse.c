@@ -116,6 +116,7 @@ char *parse_string(char *str, int i){
 	int end = parse_find_string_end(str,start+1);
 
 	PARSE_POINTER = end;
+
 	if( end >= start ){
 		// converts to a string, then convert string to a number
 		int num_of_chars = end-start;
@@ -124,7 +125,6 @@ char *parse_string(char *str, int i){
 		
 		memcpy( sub, &str[start], num_of_chars );
 		sub[num_of_chars] = '\0';
-
 		return sub;
 	}else{
 		printf("(parse.c::parse_word) failed to parse word at %d \n",i);
@@ -140,6 +140,7 @@ struct Token *parse_char(char *str, int i){
 	* If our scan is 'out of bounds' 
 	* assume whitespace to avoid undefined behaviour.
 	*/
+
 	
 	if( i == 0 )
 		left = ' ';
@@ -148,13 +149,11 @@ struct Token *parse_char(char *str, int i){
 		right = ' ';
 
 	struct Token *t;
-	
 	t = token_create(-1,0); // Blank token, gets thrown out by default. 
 
 	if( char_is_numeric(current) && !char_is_numeric(left) ){
 		int value = parse_number(str,i);
 		
-		//t->type  = '#';
 		t->type = T_NUMBER;
 		t->value = value;
 	}
@@ -167,12 +166,11 @@ struct Token *parse_char(char *str, int i){
 		if( type != -1 ){
 			t->type = type;
 		}else{
-			//t->type = '.';
 			t->type = T_POINTER;
 		}
 	}
 
-	if( current == '"' && char_is_alphabetic(right) && !char_is_alphabetic(left) ){
+	if( current == '"'){
 		char *strx = parse_string(str,i);
 		t->type   = T_STRING;
 		t->string = strx;
@@ -191,7 +189,7 @@ struct Token *parse_char(char *str, int i){
 		if( current == '=' ) t->type = T_EQUALS;
 		if( current == ',' ) t->type = T_COMMA;
 	}
-	
+
 	return t;
 }
 
@@ -205,8 +203,9 @@ struct List *parse(char *str){
 	//int i;
 	for(PARSE_POINTER=0; PARSE_POINTER<length; PARSE_POINTER++){
 		struct Token *t = parse_char(str,PARSE_POINTER);
-		// If the token is 'blank' we can forget it.
 		if( t->type == -1 ){
+			//printf("Freeing token at %d\n",PARSE_POINTER);
+			//token_print(t);
 			free(t);
 		}else{
 			list_add(list,t);

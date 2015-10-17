@@ -94,5 +94,4 @@ void list_print_tree(struct List *list){
 	for(i=0;i<list->length;i++){
 		token_print_tree(list->tokens[i],0);
 	}
-	printf("\n");
 }

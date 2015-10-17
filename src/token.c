@@ -10,7 +10,6 @@ void token_print(struct Token *t){
 	if(t->type == T_NUMBER){
 		printf(" %d",t->value);
 	}else if (t->type == T_LIST){
-		//printf("\n");
 		if(t->value == LIST_EXPRESSION)
 			printf("exp");
 		if(t->value == LIST_STATEMENT)
@@ -37,7 +36,7 @@ void token_print(struct Token *t){
 void token_print_tree(struct Token *t, int indent){
 	int i,j;
 
-	printf("|");
+	printf("| ");
 
 	for(j=0; j<indent; j++){printf("...");}
 
@@ -62,16 +61,19 @@ void token_print_tree(struct Token *t, int indent){
 		printf("[%d]->\n",t->list->length);
 		for(i=0;i<t->list->length;i++){
 			token_print_tree(t->list->tokens[i],indent+1);
-			printf("\n");
 		}
 	}else{
 		char *s = parse_type_to_word(t->type);
 		printf(" %s",s);
 	}
+
+	if (t->type != T_LIST)
+		printf("\n");
+	
 }
 
 struct Token *token_create(int type, int value){
-	struct Token *t = malloc(sizeof(struct Token *));
+	struct Token *t = malloc(sizeof(struct Token));
 	t->type  = type;
 	t->value = value;
 	if( type == T_LIST ){

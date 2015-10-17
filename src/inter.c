@@ -9,8 +9,8 @@
 #include "inter.h"
 #include "functions.h"
 
-#define INTER_STATEMENTS {T_IF,T_PRINT,T_EQUALS}
-#define INTER_STATEMENTS_LENGTH 3
+#define INTER_STATEMENTS {T_IF,T_PRINT,T_EQUALS,T_ADD,T_SUBTRACT,T_MULTIPLY,T_DIVIDE}
+#define INTER_STATEMENTS_LENGTH 7
 
 const int STATEMENTS[INTER_STATEMENTS_LENGTH] = INTER_STATEMENTS;
 
@@ -215,6 +215,38 @@ int inter_expression(struct List *list){
 	return temp->tokens[0]->value;
 }
 
+struct Token *inter_statement_string(struct List *list, int index){
+	struct Token *word = token_create(T_LIST,LIST_FUNCTION);
+	list_add(word->list,token_create(T_STRING,0));
+	list_add(word->list,list->tokens[index]);
+	return word;
+}
+
+struct Token *inter_statement_expression(struct List *list, int index){
+	struct Token *word = token_create(T_LIST, LIST_FUNCTION);
+
+	int expression_end = -1;
+
+	int i;
+	for(i=index;i<list->length;i++){
+		char t = list->tokens[i]->type;
+		if( !(token_is_operator(t)||t==T_OPEN_PAREN||t==T_CLOSE_PAREN||t==T_NUMBER) ){
+			expression_end = i;
+			break;
+		}
+		if( i == list->length-1){
+			expression_end = i+1;
+		}
+	}
+
+	if(expression_end == -1)printf("(ERROR:inter_statement_expression) Could not find end of expression\n");
+
+	word->list = list_sub(list,index,expression_end-1);
+	list_insert(word->list,token_create(T_EXPRESSION,LIST_FUNCTION),0);
+
+	return word;
+}
+
 struct Token *inter_statement_if(struct List *list, int index){
 	// if, expression, statement
 	struct Token *word = token_create(T_LIST, LIST_FUNCTION);
@@ -240,8 +272,8 @@ struct Token *inter_statement_if(struct List *list, int index){
 
 	// Extract expression
 	struct Token *expression = token_create(T_LIST,LIST_FUNCTION);
-	expression->list = list_sub(list,if_index+1,then_index-1);
-	list_insert(expression->list, token_create(T_EXPRESSION,0),0); // Add the header
+	expression = inter_statement(list,if_index+1);
+	//list_insert(expression->list, token_create(T_EXPRESSION,0),0); // Add the header
 
 	// Extract statement
 	struct Token *statement = token_create(T_LIST,LIST_STATEMENT);
@@ -254,6 +286,47 @@ struct Token *inter_statement_if(struct List *list, int index){
 	list_add(word->list, header);
 	list_add(word->list, expression);
 	list_add(word->list, statement);
+
+	return word;
+}
+
+struct Token *inter_statement_operator(struct List *list, int index){
+	struct Token *word = token_create(T_LIST,LIST_FUNCTION);
+
+	word->end = index+1;
+
+	struct Token *header,*left,*right;
+	header = list->tokens[index];
+	left   = list->tokens[index-1];
+	right  = list->tokens[index+1];
+
+	// If the token to the right isn't a number
+	// we need to recursively parse it as a function
+	if ( right->type != T_NUMBER ) {
+		right = inter_statement(list,index+1);
+		word->end = right->end;
+	}
+
+	//1+2+3	
+	if( right->type == T_NUMBER && list->length > index+2 ){
+		
+		struct Token *right_right = list->tokens[index+2];
+		
+		if( token_is_operator(right_right->type) ){
+			right = inter_statement_operator(list,index+2);
+			word->end = right->end;
+		}
+		
+		//right = inter_statement(list,index+1);
+		//word->end = right->end;
+
+	}
+
+	// Operands
+	list_add(word->list, header); // HEADER
+	list_add(word->list, left); 
+	list_add(word->list, right);
+
 
 	return word;
 }
@@ -277,33 +350,36 @@ struct Token *inter_statement_function(struct List *list, int index){
 	}
 	// Add the header+arguments to the 'statement'
 	list_add(statement->list, header);
+
+	int parenthesis_skips = 0;
 	// Extract the 'arguments' from between the parenthesis
 	int i, start = open_paren_index+1, end = close_paren_index-1, last = start;
 	for(i=start; i<=end; i++){
 		int t = list->tokens[i]->type;
+		
+		if( t == T_OPEN_PAREN )
+			parenthesis_skips++;
+		if( t == T_CLOSE_PAREN )
+			parenthesis_skips--;
+		if( parenthesis_skips>0 )
+			continue;
+
 		if( i == end || t == T_COMMA){
 			struct Token *arg = token_create(T_LIST,LIST_FUNCTION);
 			
 			if( i == end ){
-				arg->list = list_sub(list,last,i);
+				arg = inter_statement(list_sub(list,last,i),0);
 			}else{
-				arg->list = list_sub(list,last,i-1);
+				arg = inter_statement(list_sub(list,last,i-1),0);
 			}
 
-			// If it doesn't look like any statement, assume it's an expression.
-			if( !token_is_match(arg->list->tokens[0]->type,STATEMENTS,INTER_STATEMENTS_LENGTH) ){
-				list_insert(arg->list, token_create(T_EXPRESSION,LIST_FUNCTION),0); // expression header
-				list_add(statement->list, arg);
-			}else{
-				list_add(statement->list, inter_statement_function(arg->list,0) );
-			}
-
+			list_add(statement->list,arg);
 
 			last = i+1;	
-			
 		}
 	}
 	statement->end = close_paren_index;
+
 	// Return our new statement function
 	return statement;
 }
@@ -311,11 +387,31 @@ struct Token *inter_statement_function(struct List *list, int index){
 struct Token *inter_statement(struct List *list, int index){
 	int type = list->tokens[index]->type;
 
+	if( token_is_operator(list->tokens[index]->type) )
+		return inter_statement_operator(list,index);
+
+	if( type == T_NUMBER ){
+		/* If it's a number
+		* check if it's attached
+		* to an operator, else
+		* return it as an expression */
+		if( list->length > index+1 ){
+			if( token_is_operator(list->tokens[index+1]->type) ){
+				return inter_statement_operator(list,index+1);
+			}
+		}
+		return inter_statement_expression(list,index);
+	}
+
 	if( type == T_IF )
 		return inter_statement_if(list,index);
 	
 	if( type == T_PRINT )
 		return inter_statement_function(list,index);
+
+
+	if( type == T_STRING)
+		return inter_statement_string(list,index);
 
 	printf("(ERROR:inter_statement) Invalid statement header '%s' \n",parse_type_to_word(type));
 
