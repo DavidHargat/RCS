@@ -166,7 +166,8 @@ struct Token *parse_char(char *str, int i){
 		if( type != -1 ){
 			t->type = type;
 		}else{
-			t->type = T_POINTER;
+			t->type   = T_VAR;
+			t->string = word;
 		}
 	}
 
@@ -188,6 +189,7 @@ struct Token *parse_char(char *str, int i){
 		if( current == ')' ) t->type = T_CLOSE_PAREN;
 		if( current == '=' ) t->type = T_EQUALS;
 		if( current == ',' ) t->type = T_COMMA;
+		if( current == '!' ) t->type = T_NOT;
 	}
 
 	return t;

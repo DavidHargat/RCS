@@ -16,25 +16,6 @@ const int STATEMENTS[INTER_STATEMENTS_LENGTH] = INTER_STATEMENTS;
 
 // BEGIN HELPER FUNCTIONS
 
-// substitution will be implimented here.
-int inter_operation(struct Token *ta, struct Token *op, struct Token *tb){
-	int type = op->type;
-	int result;
-	
-	int a = ta->value;
-	int b = tb->value;
-	
-	if(type == T_ADD)
-		result = a + b;
-	if(type == T_MULTIPLY)
-		result = a * b;
-	if(type == T_SUBTRACT)
-		result = a - b;
-	if(type == T_DIVIDE)
-		result = a / b;
-	
-	return result;
-}
 // Inclusive of start! (checks the first index.)
 int inter_find_next_type(struct List *list, int type, int start){
 	int i;
@@ -94,131 +75,11 @@ int inter_find_close_paren(struct List *list, int start){
 	return -1;	
 }
 
-// Checks if an expression is valid
-// Returns boolean
-int inter_expression_check(struct List *list){
-	if(list->length == 0){
-		printf("(ERROR:inter_expression_check) Expression is empty.\n");
-	}
-
-	if(list->length == 1){
-		if( list->tokens[0]->type != T_NUMBER ){
-			printf("(ERROR:inter_expression_check) Expression is non-numeric '%c'.\n", list->tokens[0]->type);
-			return -1;
-		}
-	}
-
-	int i;
-	for(i=0; i<list->length; i++){
-		struct Token *t = list->tokens[i];
-		if( token_is_operator(t->type) ){
-			if( i+1 < list->length ){
-				struct Token *left=list->tokens[i-1],*right=list->tokens[i+1];
-				if( left->type != T_NUMBER && left->type != T_CLOSE_PAREN ){
-					printf("(ERROR:inter_expression_check) Operator with invalid operand '%d %d'.\n", right->type, t->type);
-					return -1;
-				}
-				if( right->type != T_NUMBER && right->type != T_OPEN_PAREN ){
-					printf("(ERROR:inter_expression_check) Operator with invalid operand '%d %d'.\n", t->type, right->type);
-					return -1;
-				}
-			}else{
-				printf("(ERROR:inter_expression_check) Operator at end of token stream");
-				return -1;
-			}
-		}
-	}
-}
-
-// Reduces parenthesis of given expression
-// Mutation
-int inter_expression_reduce(struct List *temp){
-	int open_paren_index;
-	while( (open_paren_index = inter_find_next_type(temp,T_OPEN_PAREN, 0)) != -1 ){
-		// Handle parenthesis recursively.
-		if( open_paren_index != -1 ){
-			int close_paren_index = inter_find_close_paren(temp,open_paren_index+1);
-			if( close_paren_index != -1){
-				int paren_size = (close_paren_index - open_paren_index);
-				// Create a new token list 'sub_expression' for whats between the parenthesis
-				struct List *sub_expression = list_sub(temp,open_paren_index+1,close_paren_index-1);
-				// Calculate the result of that expression
-				int result = inter_expression(sub_expression);
-				// Remove that chunk of tokens from our list
-				list_remove_sub(temp,open_paren_index+1,close_paren_index);
-				// Add a 'result token' where the expression was.
-				struct Token *result_token = token_create(T_NUMBER,result); // replace close paren with result
-				temp->tokens[open_paren_index] = result_token;
-			}else{
-				printf("(ERROR:inter_expression) found '(' without matching ')'.\n");
-				return 0;
-			}
-		}
-	}
-}
-
-// Reduces math operations of given expression
-// Mutation
-int inter_expression_resolve(struct List *temp){
-	int i;
-	for(i=0; i < temp->length; i++){
-		int type = temp->tokens[i]->type;
-		if( token_is_operator(type) ){
-			int result = inter_operation(temp->tokens[i-1],temp->tokens[i],temp->tokens[i+1]);
-			struct Token *result_token = token_create(T_NUMBER,result);
-			list_remove(temp,i-1);
-			list_remove(temp,i-1);
-			temp->tokens[i-1] = result_token;
-			i = -1;
-		}else if( type == T_FUNCTION ){
-			struct Token *result_token = function_execute(temp->tokens[i]);
-			list_remove(temp,i);
-			temp->tokens[i] = result_token;
-			i = -1;
-		}else if( type == T_NUMBER ){
-			// skip
-		}else{
-			printf("(ERROR:inter_expression_resolve) Invalid Expression '%s'. \n",parse_type_to_word(type));
-		}
-	}
-}
-
-// END HELPER FUNCTIONS
-
-// Resolves an expression to a value.
-// TODO: Should probably resolve to a token (to support multiple values.)
-int inter_expression(struct List *list){
-	struct List *temp = list_copy(list);
-
-	if( list->length == 0){
-		return 0;
-	}
-
-	if( list->length == 1 ){
-		return list->tokens[0]->value;
-	}
-
-	if( inter_expression_check( temp ) == -1 ){
-		printf("(ERROR:inter_expression) Invalid expression. \n");
-		return 0;
-	}
-
-	inter_expression_reduce( temp );
-
-	inter_expression_resolve( temp );
-
-	if( temp->length != 1 ){
-		printf("(ERROR:inter_expression) Expected expression length: 1, found: %d.\n",temp->length);
-		list_print(temp);
-	}
-	
-	return temp->tokens[0]->value;
-}
-
 struct Token *inter_statement_string(struct List *list, int index){
 	struct Token *word = token_create(T_LIST,LIST_FUNCTION);
 	list_add(word->list,token_create(T_STRING,0));
 	list_add(word->list,list->tokens[index]);
+	word->end = index;
 	return word;
 }
 
@@ -239,8 +100,10 @@ struct Token *inter_statement_expression(struct List *list, int index){
 		}
 	}
 
+
 	if(expression_end == -1)printf("(ERROR:inter_statement_expression) Could not find end of expression\n");
 
+	word->end = expression_end-1;
 	word->list = list_sub(list,index,expression_end-1);
 	list_insert(word->list,token_create(T_EXPRESSION,LIST_FUNCTION),0);
 
@@ -331,6 +194,41 @@ struct Token *inter_statement_operator(struct List *list, int index){
 	return word;
 }
 
+struct Token *inter_statement_assignment(struct List *list, int index){
+	struct Token *word = token_create(T_LIST,LIST_FUNCTION);
+
+	struct Token *header, *name, *value;
+
+	header = list->tokens[index];
+	name   = list->tokens[index-1];
+	value  = inter_statement(list,index+1);
+
+	word->end = value->end;
+
+	struct Token *nametoken = token_create(T_STRING,0);
+	nametoken->string = name->string;
+
+	list_add(word->list,header);
+	list_add(word->list,nametoken);
+	list_add(word->list,value);
+
+	return word;
+}
+
+struct Token *inter_statement_var(struct List *list, int index){
+	struct Token *word = token_create(T_LIST,LIST_FUNCTION);
+
+	struct Token *str = token_create(T_STRING,0);
+	str->string = list->tokens[index]->string;
+	
+	list_add(word->list, token_create(T_LOOKUP, 0)); // Header
+	list_add(word->list, str);
+
+	word->end = index;
+
+	return word;
+}
+
 // construct function syntax
 struct Token *inter_statement_function(struct List *list, int index){
 	// Create a new 'statement' token
@@ -367,11 +265,31 @@ struct Token *inter_statement_function(struct List *list, int index){
 		if( i == end || t == T_COMMA){
 			struct Token *arg = token_create(T_LIST,LIST_FUNCTION);
 			
+			struct List *arg_segment;
 			if( i == end ){
-				arg = inter_statement(list_sub(list,last,i),0);
+				arg_segment = list_sub(list,last,i);
 			}else{
-				arg = inter_statement(list_sub(list,last,i-1),0);
+				arg_segment = list_sub(list,last,i-1);
 			}
+
+			arg = inter_statement(arg_segment,0);
+			
+			// Ugly ass op handler code
+			list_print(arg_segment);
+			int op_index = -1;
+			int j;
+			for(j=0; j<arg_segment->length; j++){
+				struct Token *arg_t = arg_segment->tokens[j];
+				if(token_is_operator(arg_t->type)){
+					op_index = j;
+					break;
+				}
+			}
+			if( op_index != -1 ){
+				arg_segment->tokens[op_index-1] = arg;
+				arg = inter_statement(arg_segment,op_index);
+			}
+			// Glad thats over.
 
 			list_add(statement->list,arg);
 
@@ -403,15 +321,27 @@ struct Token *inter_statement(struct List *list, int index){
 		return inter_statement_expression(list,index);
 	}
 
+	if( type == T_VAR )
+		return inter_statement_var(list,index);
+
+	if( type == T_EQUALS )
+		return inter_statement_assignment(list,index);
+
 	if( type == T_IF )
 		return inter_statement_if(list,index);
 	
 	if( type == T_PRINT )
 		return inter_statement_function(list,index);
 
+	if( type == T_LOOKUP )
+		return inter_statement_function(list,index);
+
+	if( type == T_NOT )
+		return inter_statement_function(list,index);
 
 	if( type == T_STRING)
 		return inter_statement_string(list,index);
+
 
 	printf("(ERROR:inter_statement) Invalid statement header '%s' \n",parse_type_to_word(type));
 

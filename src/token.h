@@ -20,9 +20,12 @@
 #define T_STRING 16
 #define T_QUOTE 17
 #define T_EXPRESSION 18
+#define T_LOOKUP 19
+#define T_VAR 20
+#define T_NOT 21
 
-#define TOKEN_MAP_SIZE 19
-#define TOKEN_MAP_TYPES {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18}
+#define TOKEN_MAP_SIZE 22
+#define TOKEN_MAP_TYPES {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21}
 
 static char * const TOKEN_MAP_WORDS[TOKEN_MAP_SIZE] = 
 {
@@ -44,7 +47,10 @@ static char * const TOKEN_MAP_WORDS[TOKEN_MAP_SIZE] =
 	",",
 	"string",
 	"\"",
-	"expression"
+	"expression",
+	"lookup",
+	"var",
+	"not"
 };
 
 struct Token{

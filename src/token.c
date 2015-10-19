@@ -42,6 +42,12 @@ void token_print_tree(struct Token *t, int indent){
 
 	if(t->type == T_NUMBER){
 		printf(" %d",t->value);
+	}else if (t->type == T_STRING) {
+		if(t->string == NULL){
+			printf(" str");
+		}else{
+			printf(" s'%s'",t->string);
+		}
 	}else if (t->type == T_LIST){
 		printf(" ");
 
